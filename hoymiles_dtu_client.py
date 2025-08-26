@@ -380,10 +380,6 @@ class Microinverter:
       self.panels = []
       self.add_panel(base_address)
 
-      # Variables to manage 'tracking mode' to prevent a value of daily productoin going down but not to zero
-      self._panel_daily_max = {}
-      self._tracking_mode = False
-      
       # self.panels.append(Panel(self.dtu.host, self.dtu.port, self.base_address, unit_id=2))
 
       # Address list:
@@ -471,54 +467,10 @@ class Microinverter:
   
   async def get_today_production(self):
         total_today = 0
-        panels_with_zero = 0
-        
         _LOGGER.debug(f"Getting today's production for microinverter {self.serial_number}")
-        
         for panel in self.panels:
-            panel_current = await panel.get_today_production()
-            panel_id = panel.address
-            
-            # Count panels that are currently showing 0 
-            if panel_current == 0:
-                panels_with_zero += 1;
-                
-            # Initialize if first time seeing this panel today
-            if panel_id not in self._panel_daily_max:
-                self._panel_daily_max[panel_id] = 0
 
-            # Update maximum if panel is producing more than before
-            if panel_current > self._panel_daily_max[panel_id]:
-                self._panel_daily_max[panel_id] = panel_current
-
-            # Decide what value to use for this panel
-            if self._tracking_mode and panel_current == 0:
-                # In tracking mode: use the daily maximum for reset panels
-                total_today += self._panel_daily_max[panel_id]
-                LOGGER.debug(f"Panel {panel_id} already reset (0), using tracked maximum: {self._panel_daily_max[panel_id]}")
-            else:
-                # Normal mode: use current value
-                total_today += panel_current
-                LOGGER.debug(f"Panel {panel_id} current production: {panel_current}")
-        
-        # Determine mode based on panel states
-        if panels_with_zero == 0:
-            # No panels have reset - normal operation
-            if self._tracking_mode:
-                LOGGER.debug("All panels producing, switching to normal mode")
-            self._tracking_mode = False
-        elif panels_with_zero == total_panels:
-            # All panels have reset - go back to normal and reset tracking
-            LOGGER.debug("All panels reset to 0, clearing tracking data and resetting")
-            self._tracking_mode = False
-            self._panel_daily_max = {}
-            return 0
-        else:
-            # Some panels reset, others haven't - enter/stay in tracking mode
-            if not self._tracking_mode:
-                LOGGER.debug(f"Entering tracking mode: {panels_with_zero}/{total_panels} panels have reset")
-            self._tracking_mode = True
-        
+            total_today += await panel.get_today_production()
         return total_today
 
   def report(self):
