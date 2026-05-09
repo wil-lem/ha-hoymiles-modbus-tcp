@@ -21,6 +21,13 @@ A custom Home Assistant integration that connects to Hoymiles DTU (Data Transfer
 
 ## Installation
 
+### HACS
+1. Add `https://github.com/wil-lem/ha-hoymiles-modbus-tcp/` as a custom repository to HACS
+2. Install "Hoymiles Modbus TCP" in HACS
+3. Follow below manual steps, from step 3
+
+### Manual
+
 1. Copy the `hoymiles_modbus_tcp` folder to your Home Assistant `custom_components` directory
 2. Restart Home Assistant
 3. Go to **Settings** > **Devices & Services** > **Add Integration**
